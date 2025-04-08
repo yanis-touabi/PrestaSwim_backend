@@ -1,0 +1,529 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int           @id @default(autoincrement())
+  email            String        @unique
+  password         String
+  firstName        String
+  lastName         String
+  avatar           String?
+  isLoggedIn       Boolean       @default(false)
+  login            Boolean       @default(false) //LOGGED in TRUE , ELSE FALSE
+  birthDate        Int?
+  role             Role
+  gender           Gender?
+  phoneNumber      String?
+  addressId        Int?
+  accountStatus    AccountStatus
+  verificationCode String?
+  isVerified       Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  ServiceProvider ServiceProvider?
+  Professional    Professional?
+  Admin           Admin?
+
+  address                Address?                @relation(fields: [addressId], references: [id])
+  sentMessage            Message[]               @relation("SentMessages")
+  recievedMessage        Message[]               @relation("ReceivedMessages")
+  Notification           Notification[]
+  BannedWord             BannedWord[]
+  LoginAttempt           LoginAttempt[]
+  Token                  Token[]
+  NotificationPreference NotificationPreference?
+  InvoiceAudit           InvoiceAudit[]
+  ContractMissionAudit   ContractMissionAudit[]
+  VacationMissionAudit   VacationMissionAudit[]
+}
+
+model Admin {
+  id              Int @id @default(autoincrement())
+  userId          Int @unique
+  permissionLevel Int // 0 = super admin, 1 = editor, 2 = viewer
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Token {
+  id           String   @id @default(uuid())
+  userId       Int // this represent the userId
+  refreshToken String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tokens")
+}
+
+model SocketToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  sessionId Int      @default(0)
+  userId    Int      @unique @default(0) // this represent the userTeamId
+  time      DateTime @default(now())
+}
+
+model Address {
+  id           Int     @id @default(autoincrement())
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  commune      String
+  postalCode   String?
+  country      String
+  latitude     Float?
+  longitude    Float?
+
+  user User[]
+  Pool Pool[]
+}
+
+model ServiceProvider {
+  id           Int     @id @default(autoincrement())
+  userId       Int     @unique
+  specialty    String?
+  bio          String?
+  hourlyRate   Float?
+  notes        String?
+  availability Boolean
+  isVerified   Boolean @default(false)
+  isBanned     Boolean @default(false)
+
+  user            User              @relation(fields: [userId], references: [id])
+  Document        Document[]
+  Application     Application[]
+  VacationMission VacationMission[]
+  ContractMission ContractMission[]
+  FavoritePool    FavoritePool[]
+  FavoriteOffer   FavoriteOffer[]
+}
+
+model Professional {
+  id              Int     @id @default(autoincrement())
+  userId          Int     @unique
+  currentPosition String // Job title or current role
+  contactEmail    String
+  contactPhone    String
+  workingAt       String // Company or organization name
+  experienceYears Int? // Number of years of experience
+  industry        String? // Industry or sector (e.g., Finance, IT, Healthcare)
+  linkedinProfile String? // LinkedIn profile URL
+  accountantEmail String // email du comptable
+
+  user            User              @relation(fields: [userId], references: [id])
+  Pool            Pool[]
+  jobOffer        JobOffer[]
+  VacationMission VacationMission[]
+  ContractMission ContractMission[]
+}
+
+model Pool {
+  id              Int     @id @default(autoincrement())
+  professionalId  Int
+  companyName     String?
+  poolName        String
+  poolDescription String?
+  poolAddressId   Int
+  // add more fields as needed, contact the team for more information
+
+  professional Professional @relation(fields: [professionalId], references: [id])
+  poolAddress  Address      @relation(fields: [poolAddressId], references: [id])
+
+  jobOffer     JobOffer[]
+  FavoritePool FavoritePool[]
+  Commission   Commission[]
+}
+
+model Document {
+  id           Int          @id @default(autoincrement())
+  providerId   Int
+  documentType DocumentType
+  filePath     String
+  qrCode       String?
+  isValidated  Boolean      @default(false)
+  uploadedAt   DateTime     @default(now())
+  validatedAt  DateTime?
+
+  provider ServiceProvider @relation(fields: [providerId], references: [id])
+}
+
+model Job {
+  id    Int    @id @default(autoincrement())
+  title String @unique
+
+  JobOffer JobOffer[]
+}
+
+model JobOffer {
+  id             Int         @id @default(autoincrement())
+  professionalId Int
+  poolId         Int
+  jobId          Int
+  title          String
+  description    String
+  requirements   String?
+  benefits       String?
+  offerType      OfferType
+  offerStatus    OfferStatus
+  createdAt      DateTime    @default(now())
+  expiryDate     DateTime
+
+  professional Professional @relation(fields: [professionalId], references: [id])
+  pool         Pool         @relation(fields: [poolId], references: [id])
+  Job          Job          @relation(fields: [jobId], references: [id])
+
+  Vacation      Vacation[]
+  Contract      Contract[]
+  Application   Application[]
+  FavoriteOffer FavoriteOffer[]
+}
+
+model Vacation {
+  id         Int      @id @default(autoincrement())
+  jobOfferId Int
+  startDate  DateTime
+  endDate    DateTime
+  hourlyRate Float
+  currency   currency
+  nbrHours   Int
+
+  jobOffer        JobOffer          @relation(fields: [jobOfferId], references: [id])
+  // we will more field later
+  vacationMission VacationMission[]
+}
+
+model Contract {
+  id               Int      @id @default(autoincrement())
+  jobOfferId       Int
+  contractType     Boolean // 0:Fixed-term / 1:Permanent
+  startDate        DateTime
+  endDate          DateTime
+  contractDuration Int? // in months
+  salary           Decimal
+  currency         currency
+  workDaysPerWeek  String[]
+  nbrHoursPerWeek  Int
+  overtimeRate     Decimal?
+
+  jobOffer        JobOffer          @relation(fields: [jobOfferId], references: [id])
+  // we will add more fields later
+  contractMission ContractMission[]
+}
+
+model Application {
+  id           Int               @id @default(autoincrement())
+  providerId   Int
+  offerId      Int
+  proposedRate Float?
+  status       ApplicationStatus // 'pending', 'accepted', 'rejected'
+  appliedAt    DateTime          @default(now())
+
+  provider ServiceProvider @relation(fields: [providerId], references: [id])
+  offer    JobOffer        @relation(fields: [offerId], references: [id])
+}
+
+model VacationMission {
+  id                 Int           @id @default(autoincrement())
+  vacationId         Int
+  professionalId     Int
+  providerId         Int
+  actualStart        DateTime
+  actualEnd          DateTime
+  currency           currency
+  hourlyRate         Float
+  nbrHours           Int
+  status             MissionStatus @default(ONGOING)
+  completionNotes    String?
+  cancellationReason String?
+
+  provider     ServiceProvider @relation(fields: [providerId], references: [id])
+  vacation     Vacation        @relation(fields: [vacationId], references: [id])
+  professional Professional    @relation(fields: [professionalId], references: [id])
+
+  Evaluation           Evaluation[]
+  Invoice              Invoice[]
+  VacationMissionAudit VacationMissionAudit[]
+}
+
+model VacationMissionAudit {
+  id                Int      @id @default(autoincrement())
+  vacationMissionId Int // Reference to VacationMission
+  action            String // INSERT, UPDATE, DELETE
+  changedFields     Json // Stores old and new values in JSON format
+  userId            Int? // ID of the user who made the change
+  timestamp         DateTime @default(now()) // Time of the change
+
+  VacationMission VacationMission @relation(fields: [vacationMissionId], references: [id])
+  user            User?           @relation(fields: [userId], references: [id])
+}
+
+model ContractMission {
+  id                 Int           @id @default(autoincrement())
+  contractType       Boolean // 0:Fixed-term / 1:Permanent
+  professionalId     Int
+  providerId         Int
+  contractId         Int
+  title              String
+  description        String
+  currency           currency
+  Salary             Float
+  workDaysPerWeek    String[]
+  nbrHoursPerWeek    Int
+  overtimeRate       Decimal?
+  actualStart        DateTime
+  actualEnd          DateTime
+  status             MissionStatus @default(ONGOING)
+  completionNotes    String?
+  cancellationReason String?
+
+  provider             ServiceProvider        @relation(fields: [providerId], references: [id])
+  contract             Contract               @relation(fields: [contractId], references: [id])
+  professional         Professional           @relation(fields: [professionalId], references: [id])
+  Evaluation           Evaluation[]
+  Invoice              Invoice[]
+  ContractMissionAudit ContractMissionAudit[]
+}
+
+model ContractMissionAudit {
+  id                Int      @id @default(autoincrement())
+  contractMissionId Int // Reference to ContractMission
+  action            String // INSERT, UPDATE, DELETE
+  changedFields     Json // Stores old and new values in JSON format
+  userId            Int? // ID of the user who made the change
+  timestamp         DateTime @default(now()) // Time of the change
+
+  contractMission ContractMission @relation(fields: [contractMissionId], references: [id])
+  user            User?           @relation(fields: [userId], references: [id])
+}
+
+model Invoice {
+  id                Int           @id @default(autoincrement())
+  contractMissionId Int?
+  vacationMissionId Int?
+  amount            Decimal
+  paidDate          DateTime?
+  status            InvoiceStatus
+  generatedDate     DateTime      @default(now())
+
+  contractMission ContractMission? @relation(fields: [contractMissionId], references: [id])
+  vacationMission VacationMission? @relation(fields: [vacationMissionId], references: [id])
+  InvoiceAudit    InvoiceAudit[]
+}
+
+model InvoiceAudit {
+  id            Int      @id @default(autoincrement())
+  invoiceId     Int // Reference to Invoice
+  action        String // INSERT, UPDATE, DELETE
+  changedFields Json // Stores old and new values in JSON format
+  userId        Int? // ID of the user who made the change
+  timestamp     DateTime @default(now()) // Time of the change
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+  user    User?   @relation(fields: [userId], references: [id])
+}
+
+model Evaluation {
+  id                Int      @id @default(autoincrement())
+  contractMissionId Int?
+  vacationMissionId Int?
+  rating            Int // 1-5
+  comment           String?
+  type              Boolean // 0:Provider / 1:Professional
+  evaluatedAt       DateTime @default(now())
+
+  contractMission ContractMission? @relation(fields: [contractMissionId], references: [id])
+  vacationMission VacationMission? @relation(fields: [vacationMissionId], references: [id])
+}
+
+model FavoritePool {
+  id         Int      @id @default(autoincrement())
+  providerId Int
+  poolId     Int
+  addedAt    DateTime @default(now())
+
+  provider ServiceProvider @relation(fields: [providerId], references: [id])
+  pool     Pool            @relation(fields: [poolId], references: [id])
+}
+
+model FavoriteOffer {
+  id         Int      @id @default(autoincrement())
+  providerId Int
+  jobOfferId Int
+  addedAt    DateTime @default(now())
+
+  provider ServiceProvider @relation(fields: [providerId], references: [id])
+  jobOffer JobOffer        @relation(fields: [jobOfferId], references: [id])
+}
+
+model Commission {
+  id          Int           @id @default(autoincrement())
+  poolId      Int
+  month       String
+  totalAmount Decimal
+  commission  Decimal
+  status      PaymentStatus
+  generatedAt DateTime      @default(now())
+
+  pool Pool @relation(fields: [poolId], references: [id])
+}
+
+model Message {
+  id         Int       @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  content    String
+  isRead     Boolean   @default(false)
+  sentAt     DateTime  @default(now())
+  readAt     DateTime?
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  title     String
+  message   String
+  type      NotificationType
+  relatedId Int? // Could be a mission ID, offer ID, etc.
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model NotificationPreference {
+  id               Int                          @id @default(autoincrement())
+  userId           Int                          @unique
+  notificationType NotificationType
+  enabled          Boolean                      @default(true)
+  deliveryMethod   NotificationDeliveryMethod[]
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model BannedWord {
+  id          Int      @id @default(autoincrement())
+  word        String   @unique
+  replacement String? // Optional replacement suggestion
+  category    String // e.g., "Profanity", "Discrimination", etc.
+  severity    Int // 1-5, where 5 is most severe
+  addedById   Int
+  createdAt   DateTime @default(now())
+
+  addedBy User @relation(fields: [addedById], references: [id])
+}
+
+// on peut rajouter cette table, pour enregistrer les tentatives de connexion
+// cela nous permettra de faire une analyse sur les tentatives de connexion
+model LoginAttempt {
+  id        Int      @id @default(autoincrement())
+  userId    Int? // Optionnel, seulement si l'utilisateur a été identifié
+  ipAddress String
+  userAgent String? // contient des inforamations sur le navigateur, le système d'exploitation, etc.
+  success   Boolean
+  timestamp DateTime @default(now())
+  country   String? // Déterminé par géolocalisation IP
+  region    String?
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  PROVIDER
+  PROFESSIONAL
+  ADMIN
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum MissionStatus {
+  ONGOING
+  COMPLETED
+  CANCELED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum DocumentType {
+  DIPLOMA
+  CERTIFICATE
+  INSURANCE
+}
+
+enum OfferType {
+  VACATION
+  CONTRACT
+}
+
+enum OfferStatus {
+  OPEN
+  CLOSED
+  SUSPENDED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum currency {
+  EUR
+  USD
+  GBP
+}
+
+enum NotificationType {
+  APPLICATION_ACCEPTED
+  APPLICATION_REJECTED
+  NEW_OFFER
+  MISSION_UPDATED
+  INVOICE_GENERATED
+  DOCUMENT_VALIDATED
+  FAVORITE_NEW_OFFER
+  MISSION_COMPLETED
+  EVALUATION_RECEIVED
+}
+
+enum NotificationDeliveryMethod {
+  EMAIL
+  IN_APP
+  SMS
+}
