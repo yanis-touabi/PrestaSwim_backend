@@ -1,22 +1,16 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { graphqlUploadExpress } from 'graphql-upload';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  const config = new DocumentBuilder()
-    .setTitle('My API')
-    .setDescription('API documentation')
-    .setVersion('1.0')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-
   app.useGlobalPipes(new ValidationPipe());
-
-  await app.listen(3000);
+  const port = process.env.PORT || 4001;
+  const host = process.env.HOST || 'localhost'; // Default to IPv4 localhost
+  await app.listen(port, host);
+  console.log(
+    `Application is running on: http://${host}:${port}/graphql`,
+  );
 }
 bootstrap();

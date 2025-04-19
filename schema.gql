@@ -1,0 +1,101 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+directive @upper on FIELD_DEFINITION
+
+"""User"""
+type User {
+  id: ID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  avatar: String
+  isLoggedIn: Boolean!
+  login: Boolean!
+  birthDate: DateTime
+  role: Role!
+  gender: Gender
+  phoneNumber: String
+  addressId: Float
+  accountStatus: AccountStatus!
+  verificationCode: String
+  isVerified: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Roles available for the user"""
+enum Role {
+  PROVIDER
+  PROFESSIONAL
+  ADMIN
+}
+
+"""Gender of the user"""
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+"""Account status of the user"""
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+type AuthResponse {
+  data: User!
+  accessToken: String!
+  refreshToken: String!
+  tokenId: String!
+  accessTokenExpires: String!
+}
+
+type BooleanResponse {
+  status: Float!
+  message: String!
+  success: Boolean!
+}
+
+type Query {
+  emptyQuery: String
+}
+
+type Mutation {
+  signUp(signUpInput: SignUpDto!, avatar: Upload): User!
+  signIn(signInInput: SignInDto!): AuthResponse!
+  logout(userId: Float!): BooleanResponse!
+  resetPassword(resetPasswordInput: ResetPasswordDto!): BooleanResponse!
+}
+
+input SignUpDto {
+  firstName: String!
+  lastName: String!
+  birthDate: DateTime
+  gender: Gender!
+  role: Role!
+  accountStatus: AccountStatus!
+  phoneNumber: String
+  email: String!
+  password: String!
+}
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload
+
+input SignInDto {
+  email: String!
+  password: String!
+}
+
+input ResetPasswordDto {
+  email: String!
+}

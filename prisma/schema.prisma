@@ -23,7 +23,7 @@ model User {
   avatar           String?
   isLoggedIn       Boolean       @default(false)
   login            Boolean       @default(false) //LOGGED in TRUE , ELSE FALSE
-  birthDate        Int?
+  birthDate        DateTime?
   role             Role
   gender           Gender?
   phoneNumber      String?
@@ -502,6 +502,7 @@ enum OfferStatus {
 enum Gender {
   MALE
   FEMALE
+  OTHER
 }
 
 enum currency {
