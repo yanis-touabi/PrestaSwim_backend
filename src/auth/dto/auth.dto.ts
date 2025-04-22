@@ -4,6 +4,7 @@ import {
   MaxLength,
   MinLength,
   IsOptional,
+  Matches,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { AccountStatus, Gender, Role } from '@prisma/client';
@@ -29,10 +30,6 @@ export class SignUpDto {
   })
   lastName: string;
 
-  // @Field({ nullable: true })
-  // @IsString({ message: 'avatar must be a string' })
-  // avatar?: string;
-
   @Field(() => Date, { nullable: true })
   birthDate?: Date | null;
 
@@ -56,9 +53,21 @@ export class SignUpDto {
 
   @Field()
   @IsString({ message: 'Password must be a string' })
-  @MinLength(3, { message: 'password must be at least 3 characters' })
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
   @MaxLength(20, {
-    message: 'password must be at most 20 characters',
+    message: 'Password must be at most 20 characters',
+  })
+  @Matches(/(?=.*[a-z])/, {
+    message: 'Password must contain at least one lowercase letter',
+  })
+  @Matches(/(?=.*[A-Z])/, {
+    message: 'Password must contain at least one uppercase letter',
+  })
+  @Matches(/(?=.*\d)/, {
+    message: 'Password must contain at least one number',
+  })
+  @Matches(/(?=.*[!@#$%^&_*])/, {
+    message: 'Password must contain at least one special character',
   })
   password: string;
 }
@@ -99,4 +108,27 @@ export class VerifyCodeDto {
   @MinLength(6, { message: 'Code must be at least 6 characters' })
   @MaxLength(6, { message: 'Code must be at most 6 characters' })
   code: string;
+}
+
+@InputType()
+export class ChangePasswordDto {
+  @Field()
+  @IsString({ message: 'Password must be a string' })
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @MaxLength(20, {
+    message: 'Password must be at most 20 characters',
+  })
+  @Matches(/(?=.*[a-z])/, {
+    message: 'Password must contain at least one lowercase letter',
+  })
+  @Matches(/(?=.*[A-Z])/, {
+    message: 'Password must contain at least one uppercase letter',
+  })
+  @Matches(/(?=.*\d)/, {
+    message: 'Password must contain at least one number',
+  })
+  @Matches(/(?=.*[!@#$%^&*])/, {
+    message: 'Password must contain at least one special character',
+  })
+  password: string;
 }

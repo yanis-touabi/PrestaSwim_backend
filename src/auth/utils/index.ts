@@ -67,7 +67,7 @@ async function getJwtAccessToken(sub, user, email, role, jwtService) {
     role,
   };
   const accessToken = await jwtService.signAsync(payload, {
-    secret: process.env.REFRECH_SECRET,
+    secret: process.env.JWT_SECRET,
   });
   return {
     accessToken,
@@ -77,7 +77,7 @@ async function getJwtAccessToken(sub, user, email, role, jwtService) {
 async function getJwtRefreshToken(sub, email, jwtService) {
   const payload = { sub, email };
   const refreshToken = await jwtService.signAsync(payload, {
-    secret: process.env.REFRECH_SECRET,
+    secret: process.env.JWT_SECRET,
     expiresIn: '10d',
   });
   return {

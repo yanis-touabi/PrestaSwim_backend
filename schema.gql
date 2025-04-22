@@ -63,6 +63,7 @@ type BooleanResponse {
   status: Float!
   message: String!
   success: Boolean!
+  expireToken: String
 }
 
 type Query {
@@ -74,6 +75,8 @@ type Mutation {
   signIn(signInInput: SignInDto!): AuthResponse!
   logout(userId: Float!): BooleanResponse!
   resetPassword(resetPasswordInput: ResetPasswordDto!): BooleanResponse!
+  verifyCode(verifyCodeInput: VerifyCodeDto!): BooleanResponse!
+  changePassword(changePasswordInput: ChangePasswordDto!): BooleanResponse!
 }
 
 input SignUpDto {
@@ -98,4 +101,13 @@ input SignInDto {
 
 input ResetPasswordDto {
   email: String!
+}
+
+input VerifyCodeDto {
+  email: String!
+  code: String!
+}
+
+input ChangePasswordDto {
+  password: String!
 }

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
 import {
+  ChangePasswordDto,
   ResetPasswordDto,
   SignInDto,
   SignUpDto,
@@ -20,6 +21,7 @@ import { join } from 'path';
 import { createWriteStream } from 'fs';
 import { FileUploadService } from 'src/common/services/file-upload.service';
 import { Injectable } from '@nestjs/common';
+import { Public } from './decorators/public.decorator';
 
 @Resolver()
 @Injectable()
@@ -30,11 +32,13 @@ export class AuthResolver {
   ) {}
 
   @Query(() => String, { nullable: true })
+  @Public()
   emptyQuery(): string {
     return 'Query is not yet implemented.';
   }
 
   @Mutation(() => User)
+  @Public()
   async signUp(
     @Args('signUpInput') signUpDto: SignUpDto,
     @Args('avatar', { type: () => GraphQLUpload, nullable: true })
@@ -45,6 +49,7 @@ export class AuthResolver {
   }
 
   @Mutation(() => AuthResponse)
+  @Public()
   signIn(@Args('signInInput') signInDto: SignInDto): Promise<any> {
     return this.authService.signIn(signInDto);
   }
@@ -60,23 +65,31 @@ export class AuthResolver {
   }
 
   @Mutation(() => BooleanResponse)
+  @Public()
   resetPassword(
     @Args('resetPasswordInput') resetPasswordDto: ResetPasswordDto,
   ): Promise<BooleanResponse> {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
-  // @Mutation(() => AuthResponse)
-  // verifyCode(
-  //   @Args('verifyCodeInput') verifyCodeDto: VerifyCodeDto,
-  // ): Promise<AuthResponse> {
-  //   return this.authService.verifyCode(verifyCodeDto);
-  // }
+  @Mutation(() => BooleanResponse)
+  @Public()
+  verifyCode(
+    @Args('verifyCodeInput') verifyCodeDto: VerifyCodeDto,
+  ): Promise<BooleanResponse> {
+    return this.authService.verifyCode(verifyCodeDto);
+  }
 
-  // @Mutation(() => BooleanResponse)
-  // changePassword(
-  //   @Args('changePasswordInput') changePasswordDto: SignInDto,
-  // ): Promise<BooleanResponse> {
-  //   return this.authService.changePassword(changePasswordDto);
-  // }
+  @Mutation(() => BooleanResponse)
+  changePassword(
+    @Args('changePasswordInput') changePasswordDto: ChangePasswordDto,
+    @Context() context,
+  ): Promise<BooleanResponse> {
+    console.log('req', context.req.user.email);
+    // console.log('req', context.user.email);
+    return this.authService.changePassword(
+      changePasswordDto,
+      context.req.user.email,
+    );
+  }
 }

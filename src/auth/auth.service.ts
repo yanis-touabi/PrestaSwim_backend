@@ -9,6 +9,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
+  ChangePasswordDto,
   ResetPasswordDto,
   SignInDto,
   SignUpDto,
@@ -23,6 +24,7 @@ import { GraphQLError, Token } from 'graphql';
 import { AuthResponse } from './models/auth-response.model';
 import { InputType } from '@nestjs/graphql';
 import { first } from 'rxjs';
+import { Public } from './decorators/public.decorator';
 const saltOrRounds = 10;
 
 @Injectable()
@@ -109,7 +111,7 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new NotFoundException('User Not Found');
+        throw new GraphQLError('User Not Found');
       }
 
       const isMatch = await bcrypt.compare(
@@ -118,7 +120,7 @@ export class AuthService {
       );
 
       if (!isMatch) {
-        throw new UnauthorizedException();
+        throw new GraphQLError("email or password doesn't match");
       }
 
       const { password, ...userWithoutPassword } = user;
@@ -213,97 +215,97 @@ export class AuthService {
     }
   }
 
-  // async verifyCode({ email, code }: { email: string; code: string }) {
-  //   try {
-  //     const user = await this.prisma.user.findUnique({
-  //       where: {
-  //         email,
-  //       },
-  //       select: {
-  //         verificationCode: true,
-  //       },
-  //     });
+  async verifyCode({ email, code }: { email: string; code: string }) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email,
+        },
+        select: {
+          verificationCode: true,
+        },
+      });
 
-  //     if (!user) {
-  //       throw new NotFoundException('User Not Found');
-  //     }
+      if (!user) {
+        throw new GraphQLError('User Not Found');
+      }
 
-  //     if (user.verificationCode !== code) {
-  //       throw new UnauthorizedException('Invalid code');
-  //     }
+      if (user.verificationCode !== code) {
+        throw new GraphQLError('Invalid code');
+      }
 
-  //     await this.prisma.user.update({
-  //       where: {
-  //         email,
-  //       },
-  //       data: {
-  //         verificationCode: null,
-  //       },
-  //     });
+      await this.prisma.user.update({
+        where: {
+          email,
+        },
+        data: {
+          verificationCode: null,
+        },
+      });
 
-  //     return {
-  //       status: 200,
-  //       message:
-  //         'Code verified successfully, proceed to change your password',
-  //     };
-  //   } catch (error) {
-  //     console.error('Error in verifyCode:', error);
-  //     if (
-  //       error instanceof NotFoundException ||
-  //       error instanceof UnauthorizedException
-  //     ) {
-  //       throw error; // Preserve known exceptions
-  //     }
+      const payload = { email };
 
-  //     throw new InternalServerErrorException(
-  //       'An unexpected error occurred during verification',
-  //     );
-  //   }
-  // }
+      // generate a experiment token
+      const accessToken = await this.jwtService.signAsync(payload, {
+        secret: process.env.JWT_SECRET,
+        expiresIn: '5m',
+      });
 
-  // async changePassword(changePasswordData: SignInDto) {
-  //   try {
-  //     const user = await this.prisma.user.findUnique({
-  //       where: {
-  //         email: changePasswordData.email,
-  //       },
-  //     });
+      return {
+        status: 200,
+        message:
+          'Code verified successfully, proceed to change your password',
+        success: true,
+        expireToken: accessToken,
+      };
+    } catch (error) {
+      console.error('Error in logout:', error);
+      throw error;
+    }
+  }
 
-  //     if (!user) {
-  //       throw new NotFoundException('User Not Found');
-  //     }
+  async changePassword(
+    changePasswordData: ChangePasswordDto,
+    email: string,
+  ) {
+    try {
+      if (!email) {
+        throw new GraphQLError(
+          'time is down, please repeat the process',
+        );
+      }
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: email,
+        },
+      });
 
-  //     const password = await bcrypt.hash(
-  //       changePasswordData.password,
-  //       saltOrRounds,
-  //     );
+      if (!user) {
+        throw new GraphQLError('User Not Found');
+      }
 
-  //     await this.prisma.user.update({
-  //       where: {
-  //         email: changePasswordData.email,
-  //       },
-  //       data: {
-  //         password,
-  //       },
-  //     });
+      const password = await bcrypt.hash(
+        changePasswordData.password,
+        saltOrRounds,
+      );
 
-  //     return {
-  //       status: 200,
-  //       message: 'Password changed successfully, go to login',
-  //     };
-  //   } catch (error) {
-  //     console.error('Error in changePassword:', {
-  //       email: changePasswordData.email,
-  //       error,
-  //     });
+      await this.prisma.user.update({
+        where: {
+          email: email,
+        },
+        data: {
+          password,
+        },
+      });
 
-  //     if (error instanceof NotFoundException) {
-  //       throw error; // Preserve known exceptions
-  //     }
-
-  //     throw new InternalServerErrorException(
-  //       'An unexpected error occurred while changing the password',
-  //     );
-  //   }
-  // }
+      return {
+        status: 200,
+        message: 'Password changed successfully, go to login',
+        success: true,
+      };
+    } catch (error) {
+      console.error('Error in logout:', error);
+      throw error;
+    }
+  }
 }

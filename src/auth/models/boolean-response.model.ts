@@ -11,4 +11,7 @@ export class BooleanResponse {
 
   @Field()
   success: boolean;
+
+  @Field({ nullable: true })
+  expireToken?: string;
 }
