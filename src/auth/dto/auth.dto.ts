@@ -5,6 +5,8 @@ import {
   MinLength,
   IsOptional,
   Matches,
+  IsNumber,
+  IsBoolean,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { AccountStatus, Gender, Role } from '@prisma/client';
@@ -131,4 +133,132 @@ export class ChangePasswordDto {
     message: 'Password must contain at least one special character',
   })
   password: string;
+}
+
+@InputType()
+export class AddressDto {
+  @Field()
+  @IsString()
+  addressLine1: string;
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  addressLine2?: string;
+
+  @Field()
+  @IsString()
+  city: string;
+
+  @Field()
+  @IsString()
+  commune: string;
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  postalCode?: string;
+
+  @Field()
+  @IsString()
+  country: string;
+
+  @Field({ nullable: true })
+  @IsNumber()
+  @IsOptional()
+  latitude?: number;
+
+  @Field({ nullable: true })
+  @IsNumber()
+  @IsOptional()
+  longitude?: number;
+}
+
+@InputType()
+export class ServiceProviderDetailsDto {
+  @Field()
+  @IsString()
+  @IsOptional()
+  specialty: string;
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  bio?: string;
+
+  @Field({ nullable: true })
+  @IsNumber()
+  @IsOptional()
+  hourlyRate?: number;
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @Field()
+  @IsBoolean()
+  availability: boolean;
+}
+
+@InputType()
+export class ProfessionalDetailsDto {
+  @Field()
+  @IsString()
+  currentPosition: string;
+
+  @Field()
+  @IsEmail()
+  contactEmail: string;
+
+  @Field()
+  @IsString()
+  contactPhone: string;
+
+  @Field()
+  @IsString()
+  workingAt: string;
+
+  @Field({ nullable: true })
+  @IsNumber()
+  @IsOptional()
+  experienceYears?: number;
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  industry?: string;
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  linkedinProfile?: string;
+
+  @Field()
+  @IsEmail()
+  accountantEmail: string;
+}
+
+@InputType()
+export class SignUpServiceProviderDto {
+  @Field(() => SignUpDto)
+  userDetails: SignUpDto;
+
+  @Field(() => AddressDto)
+  addressDetails: AddressDto;
+
+  @Field(() => ServiceProviderDetailsDto)
+  serviceProviderDetails: ServiceProviderDetailsDto;
+}
+
+@InputType()
+export class SignUpProfessionalDto {
+  @Field(() => SignUpDto)
+  userDetails: SignUpDto;
+
+  @Field(() => AddressDto)
+  addressDetails: AddressDto;
+
+  @Field(() => ProfessionalDetailsDto)
+  professionalDetails: ProfessionalDetailsDto;
 }

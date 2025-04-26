@@ -12,13 +12,16 @@ import {
   SignInDto,
   SignUpDto,
   VerifyCodeDto,
+  SignUpServiceProviderDto,
+  SignUpProfessionalDto,
 } from './dto/auth.dto';
 import { AuthResponse } from './models/auth-response.model';
 import { User } from '../user/models/user.model';
+import { UserWithRelations } from './models/user-with-relations.model';
 import { BooleanResponse } from './models/boolean-response.model';
+import { ServiceProvider } from '@prisma/client';
+import { Professional } from '@prisma/client';
 import { GraphQLUpload, FileUpload } from 'graphql-upload';
-import { join } from 'path';
-import { createWriteStream } from 'fs';
 import { FileUploadService } from 'src/common/services/file-upload.service';
 import { Injectable } from '@nestjs/common';
 import { Public } from './decorators/public.decorator';
@@ -44,8 +47,27 @@ export class AuthResolver {
     @Args('avatar', { type: () => GraphQLUpload, nullable: true })
     avatar: FileUpload,
   ): Promise<User> {
-    console.log('avatar', avatar);
     return await this.authService.signup(signUpDto, avatar);
+  }
+
+  @Mutation(() => UserWithRelations)
+  @Public()
+  async signUpServiceProvider(
+    @Args('signUpInput') signUpDto: SignUpServiceProviderDto,
+    @Args('avatar', { type: () => GraphQLUpload, nullable: true })
+    avatar: FileUpload,
+  ): Promise<UserWithRelations> {
+    return this.authService.signUpServiceProvider(signUpDto, avatar);
+  }
+
+  @Mutation(() => UserWithRelations)
+  @Public()
+  async signUpProfessional(
+    @Args('signUpInput') signUpDto: SignUpProfessionalDto,
+    @Args('avatar', { type: () => GraphQLUpload, nullable: true })
+    avatar: FileUpload,
+  ): Promise<UserWithRelations> {
+    return this.authService.signUpProfessional(signUpDto, avatar);
   }
 
   @Mutation(() => AuthResponse)
@@ -85,8 +107,6 @@ export class AuthResolver {
     @Args('changePasswordInput') changePasswordDto: ChangePasswordDto,
     @Context() context,
   ): Promise<BooleanResponse> {
-    console.log('req', context.req.user.email);
-    // console.log('req', context.user.email);
     return this.authService.changePassword(
       changePasswordDto,
       context.req.user.email,

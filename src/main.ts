@@ -5,6 +5,10 @@ import { graphqlUploadExpress } from 'graphql-upload';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // ✅ Enable CORS for all origins
+  app.enableCors({
+    origin: '*', // Allow all origins
+  });
   app.useGlobalPipes(new ValidationPipe());
   const port = process.env.PORT || 4001;
   const host = process.env.HOST || 'localhost'; // Default to IPv4 localhost

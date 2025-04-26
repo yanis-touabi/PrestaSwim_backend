@@ -3,6 +3,7 @@ import {
   Injectable,
   ForbiddenException,
 } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService, TokenExpiredError } from '@nestjs/jwt';
@@ -14,6 +15,7 @@ import { Role } from '@prisma/client';
 @Injectable()
 export class GqlAuthGuard extends AuthGuard('jwt') {
   constructor(
+    private prisma: PrismaService,
     private reflector: Reflector,
     private jwtService: JwtService,
   ) {
@@ -47,7 +49,7 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
       payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
       });
-      console.log('payload', payload);
+
       request['user'] = payload;
     } catch (error) {
       console.error('JWT verification failed:', error);
@@ -55,6 +57,19 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
         throw new ForbiddenException('Token has expired');
       }
       throw new ForbiddenException('Invalid token');
+    }
+
+    // get the user info from the database
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: payload.sub,
+      },
+    });
+
+    if (user?.accountStatus === 'SUSPENDED') {
+      throw new ForbiddenException(
+        'User is banned, please contact our services',
+      );
     }
 
     // Check roles if @Roles() decorator is present

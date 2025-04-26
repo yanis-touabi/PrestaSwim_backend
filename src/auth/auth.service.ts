@@ -1,11 +1,4 @@
-import {
-  ConflictException,
-  HttpException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
@@ -13,18 +6,17 @@ import {
   ResetPasswordDto,
   SignInDto,
   SignUpDto,
+  SignUpServiceProviderDto,
+  SignUpProfessionalDto,
+  AddressDto,
 } from './dto/auth.dto';
 import { getTokens } from './utils/index';
 import { FileUpload } from 'graphql-upload';
-import { AccountStatus, Role } from '@prisma/client';
+import { AccountStatus } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
 import { FileUploadService } from 'src/common/services/file-upload.service';
-import { GraphQLError, Token } from 'graphql';
-import { AuthResponse } from './models/auth-response.model';
-import { InputType } from '@nestjs/graphql';
-import { first } from 'rxjs';
-import { Public } from './decorators/public.decorator';
+import { GraphQLError } from 'graphql';
 const saltOrRounds = 10;
 
 @Injectable()
@@ -36,30 +28,32 @@ export class AuthService {
     private fileUploadService: FileUploadService,
   ) {}
 
-  async signup(signUpDto: SignUpDto, avatar: FileUpload) {
+  private async createUserAndAddress(
+    userDetails: SignUpDto,
+    addressDetails: AddressDto,
+    avatar?: FileUpload,
+  ) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: {
-          email: signUpDto.email,
-        },
+      // Check if user exists
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: userDetails.email },
       });
-      if (user) {
+      if (existingUser) {
         throw new GraphQLError('User already exists', {
-          extensions: {
-            code: 'CONFLICT',
-            http: { status: 409 },
-          },
+          extensions: { code: 'CONFLICT', http: { status: 409 } },
         });
       }
 
+      // Hash password
       const password = await bcrypt.hash(
-        signUpDto.password,
+        userDetails.password,
         saltOrRounds,
       );
 
+      // Upload avatar if provided
       let avatarPath: string | null = null;
       if (avatar) {
-        const filename = `firstimage-${Date.now()}-${avatar.filename}`;
+        const filename = `avatar-${Date.now()}-${avatar.filename}`;
         avatarPath = await this.fileUploadService.uploadFile(
           avatar,
           'user',
@@ -67,38 +61,129 @@ export class AuthService {
         );
       }
 
-      const userCreated = {
-        ...signUpDto,
-        password,
-        accountStatus: AccountStatus.ACTIVE,
-        ...(avatarPath && { avatar: avatarPath }), // add avatar if available
-      };
-
-      const newUser = await this.prisma.user.create({
-        data: userCreated,
+      // Create address first
+      const address = await this.prisma.address.create({
+        data: addressDetails,
       });
 
-      return newUser;
-    } catch (error) {
-      console.error('Error in signup:', {
-        email: signUpDto.email,
-        error,
-      });
-
-      if (error instanceof GraphQLError) {
-        throw error;
-      }
-
-      throw new GraphQLError(
-        'An unexpected error occurred during signup',
-        {
+      if (!address) {
+        throw new GraphQLError('Failed to create address', {
           extensions: {
             code: 'INTERNAL_SERVER_ERROR',
             http: { status: 500 },
           },
+        });
+      }
+
+      // Create user with address reference
+      const user = await this.prisma.user.create({
+        data: {
+          ...userDetails,
+          password,
+          accountStatus: AccountStatus.ACTIVE,
+          addressId: address.id,
+          ...(avatarPath && { avatar: avatarPath }),
         },
-      );
+      });
+
+      if (!user) {
+        throw new GraphQLError('Failed to create user', {
+          extensions: {
+            code: 'INTERNAL_SERVER_ERROR',
+            http: { status: 500 },
+          },
+        });
+      }
+
+      return { user, address };
+    } catch (error) {
+      console.error('Error in createUserAndAddress:', error);
+      throw error instanceof GraphQLError
+        ? error
+        : new GraphQLError('Failed to create user and address', {
+            extensions: {
+              code: 'INTERNAL_SERVER_ERROR',
+              http: { status: 500 },
+            },
+          });
     }
+  }
+
+  async signup(signUpDto: SignUpDto, avatar: FileUpload) {
+    const addressDto = {
+      addressLine1: '',
+      city: '',
+      commune: '',
+      country: '',
+    } as AddressDto;
+
+    const { user } = await this.createUserAndAddress(
+      signUpDto,
+      addressDto,
+      avatar,
+    );
+    return user;
+  }
+
+  async signUpServiceProvider(
+    signUpDto: SignUpServiceProviderDto,
+    avatar?: FileUpload,
+  ) {
+    return this.prisma.$transaction(async (prisma) => {
+      const { user, address } = await this.createUserAndAddress(
+        signUpDto.userDetails,
+        signUpDto.addressDetails,
+        avatar,
+      );
+
+      const serviceProvider = await prisma.serviceProvider.create({
+        data: {
+          userId: user.id,
+          ...signUpDto.serviceProviderDetails,
+        },
+      });
+
+      if (!serviceProvider) {
+        throw new GraphQLError('Failed to create service provider', {
+          extensions: {
+            code: 'INTERNAL_SERVER_ERROR',
+            http: { status: 500 },
+          },
+        });
+      }
+
+      return {
+        user,
+        address,
+        serviceProvider,
+      };
+    });
+  }
+
+  async signUpProfessional(
+    signUpDto: SignUpProfessionalDto,
+    avatar?: FileUpload,
+  ) {
+    return this.prisma.$transaction(async (prisma) => {
+      const { user, address } = await this.createUserAndAddress(
+        signUpDto.userDetails,
+        signUpDto.addressDetails,
+        avatar,
+      );
+
+      const professional = await prisma.professional.create({
+        data: {
+          userId: user.id,
+          ...signUpDto.professionalDetails,
+        },
+      });
+
+      return {
+        user,
+        address,
+        professional,
+      };
+    });
   }
 
   async signIn(signInDto: SignInDto) {
@@ -114,13 +199,25 @@ export class AuthService {
         throw new GraphQLError('User Not Found');
       }
 
+      if (user.accountStatus !== 'ACTIVE') {
+        return new GraphQLError(
+          'Account is not active or suspended',
+          {
+            extensions: {
+              code: 'FORBIDDEN',
+              http: { status: 403 },
+            },
+          },
+        );
+      }
+
       const isMatch = await bcrypt.compare(
         signInDto.password,
         user.password,
       );
 
       if (!isMatch) {
-        throw new GraphQLError("email or password doesn't match");
+        return new GraphQLError("email or password doesn't match");
       }
 
       const { password, ...userWithoutPassword } = user;

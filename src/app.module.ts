@@ -4,6 +4,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { upperDirectiveTransformer } from './common/directives/upper-case.directive';
 // import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
 import { DirectiveLocation, GraphQLDirective } from 'graphql';
 import { PrismaModule } from './prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
@@ -52,6 +53,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     }),
     PrismaModule,
     AuthModule,
+    UserModule,
     MailModule,
   ],
   providers: [],

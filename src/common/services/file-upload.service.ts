@@ -34,7 +34,7 @@ export class FileUploadService {
         createReadStream()
           .pipe(createWriteStream(filePath))
           .on('finish', () => {
-            resolve(`/public/${destinationDir}/${filename}`);
+            resolve(`/public/images/${destinationDir}/${filename}`);
           })
           .on('error', (error) => {
             reject(error);
@@ -44,6 +44,19 @@ export class FileUploadService {
       console.error('Error uploading file:', error);
       throw new HttpException(
         'Failed to upload file',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async deleteFile(filePath: string): Promise<void> {
+    try {
+      const fullPath = join(process.cwd(), filePath);
+      await fs.unlink(fullPath);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw new HttpException(
+        'Failed to delete file',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

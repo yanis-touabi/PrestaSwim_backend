@@ -18,5 +18,6 @@ import { Reflector } from '@nestjs/core';
     },
     Reflector,
   ],
+  exports: [AuthService],
 })
 export class AuthModule {}

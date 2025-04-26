@@ -4,6 +4,44 @@
 
 directive @upper on FIELD_DEFINITION
 
+"""ServiceProvider"""
+type ServiceProvider {
+  id: Float!
+  specialty: String
+  bio: String
+  hourlyRate: Float
+  notes: String
+  availability: Boolean!
+  userId: Float!
+}
+
+"""Professional"""
+type Professional {
+  id: Float!
+  currentPosition: String!
+  contactEmail: String!
+  contactPhone: String!
+  workingAt: String!
+  experienceYears: Float
+  industry: String
+  linkedinProfile: String
+  accountantEmail: String!
+  userId: Float!
+}
+
+"""Address"""
+type Address {
+  id: Float!
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  commune: String!
+  country: String!
+  postalCode: String
+  latitude: Float
+  longitude: Float
+}
+
 """User"""
 type User {
   id: ID!
@@ -23,6 +61,9 @@ type User {
   isVerified: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime
+  address: Address
+  serviceProvider: ServiceProvider
+  professional: Professional
 }
 
 """
@@ -59,6 +100,14 @@ type AuthResponse {
   accessTokenExpires: String!
 }
 
+"""User with relations"""
+type UserWithRelations {
+  user: User!
+  address: Address
+  serviceProvider: ServiceProvider
+  professional: Professional
+}
+
 type BooleanResponse {
   status: Float!
   message: String!
@@ -68,15 +117,25 @@ type BooleanResponse {
 
 type Query {
   emptyQuery: String
+  getUser: User!
+  getUserById(userId: String!): User!
+  getAllUser: [User!]!
 }
 
 type Mutation {
   signUp(signUpInput: SignUpDto!, avatar: Upload): User!
+  signUpServiceProvider(signUpInput: SignUpServiceProviderDto!, avatar: Upload): UserWithRelations!
+  signUpProfessional(signUpInput: SignUpProfessionalDto!, avatar: Upload): UserWithRelations!
   signIn(signInInput: SignInDto!): AuthResponse!
   logout(userId: Float!): BooleanResponse!
   resetPassword(resetPasswordInput: ResetPasswordDto!): BooleanResponse!
   verifyCode(verifyCodeInput: VerifyCodeDto!): BooleanResponse!
   changePassword(changePasswordInput: ChangePasswordDto!): BooleanResponse!
+  updateUser(updateUserInput: UpdateUserDto!): User!
+  deactivateAccount: BooleanResponse!
+  updateAvatar(avatar: Upload): User!
+  updatePassword(updatePasswordInput: UpdatePasswordDto!): BooleanResponse!
+  banUser(userId: String!): BooleanResponse!
 }
 
 input SignUpDto {
@@ -94,6 +153,48 @@ input SignUpDto {
 """The `Upload` scalar type represents a file upload."""
 scalar Upload
 
+input SignUpServiceProviderDto {
+  userDetails: SignUpDto!
+  addressDetails: AddressDto!
+  serviceProviderDetails: ServiceProviderDetailsDto!
+}
+
+input AddressDto {
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  commune: String!
+  postalCode: String
+  country: String!
+  latitude: Float
+  longitude: Float
+}
+
+input ServiceProviderDetailsDto {
+  specialty: String!
+  bio: String
+  hourlyRate: Float
+  notes: String
+  availability: Boolean!
+}
+
+input SignUpProfessionalDto {
+  userDetails: SignUpDto!
+  addressDetails: AddressDto!
+  professionalDetails: ProfessionalDetailsDto!
+}
+
+input ProfessionalDetailsDto {
+  currentPosition: String!
+  contactEmail: String!
+  contactPhone: String!
+  workingAt: String!
+  experienceYears: Float
+  industry: String
+  linkedinProfile: String
+  accountantEmail: String!
+}
+
 input SignInDto {
   email: String!
   password: String!
@@ -110,4 +211,18 @@ input VerifyCodeDto {
 
 input ChangePasswordDto {
   password: String!
+}
+
+input UpdateUserDto {
+  firstName: String
+  lastName: String
+  phoneNumber: String
+  birthDate: DateTime
+  gender: Gender
+  email: String
+}
+
+input UpdatePasswordDto {
+  currentPassword: String!
+  newPassword: String!
 }

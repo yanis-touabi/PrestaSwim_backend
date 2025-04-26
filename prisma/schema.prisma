@@ -102,8 +102,6 @@ model ServiceProvider {
   hourlyRate   Float?
   notes        String?
   availability Boolean
-  isVerified   Boolean @default(false)
-  isBanned     Boolean @default(false)
 
   user            User              @relation(fields: [userId], references: [id])
   Document        Document[]

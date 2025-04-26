@@ -1,5 +1,8 @@
 import { ObjectType, Field, ID } from '@nestjs/graphql';
 import { AccountStatus, Gender, Role } from '@prisma/client';
+import { ServiceProvider } from './service-provider.model';
+import { Professional } from './professional.model';
+import { Address } from '../../auth/models/address.model';
 
 @ObjectType({ description: 'User' })
 export class User {
@@ -52,5 +55,14 @@ export class User {
   createdAt: Date;
 
   @Field(() => Date, { nullable: true })
-  updatedAt?: Date | null; // Make nullable if the field can be null
+  updatedAt?: Date | null;
+
+  @Field(() => Address, { nullable: true })
+  address?: Address | null;
+
+  @Field(() => ServiceProvider, { nullable: true })
+  serviceProvider?: ServiceProvider | null;
+
+  @Field(() => Professional, { nullable: true })
+  professional?: Professional | null;
 }
