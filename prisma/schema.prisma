@@ -526,3 +526,76 @@ enum NotificationDeliveryMethod {
   IN_APP
   SMS
 }
+
+// ********************************* VIEW MODELS ********************************* 
+
+view ServiceProviderUserDetails {
+  userId            Int           @unique
+  email             String
+  firstName         String
+  lastName          String
+  avatar            String?
+  isLoggedIn        Boolean
+  login             Boolean
+  birthDate         DateTime?
+  role              Role
+  gender            Gender?
+  phoneNumber       String?
+  accountStatus     AccountStatus
+  verificationCode  String?
+  isVerified        Boolean
+  createdAt         DateTime
+  updatedAt         DateTime
+  serviceProviderId Int
+  specialty         String?
+  bio               String?
+  hourlyRate        Float?
+  notes             String?
+  availability      Boolean
+  addressId         Int?
+  addressLine1      String?
+  addressLine2      String?
+  city              String?
+  commune           String?
+  postalCode        String?
+  country           String?
+  latitude          Float?
+  longitude         Float?
+}
+
+view ProfessionalUserDetails {
+  userId           Int           @unique
+  email            String
+  firstName        String
+  lastName         String
+  avatar           String?
+  isLoggedIn       Boolean
+  login            Boolean
+  birthDate        DateTime?
+  role             Role
+  gender           Gender?
+  phoneNumber      String?
+  accountStatus    AccountStatus
+  verificationCode String?
+  isVerified       Boolean
+  createdAt        DateTime
+  updatedAt        DateTime
+  professionalId   Int
+  currentPosition  String
+  contactEmail     String
+  contactPhone     String
+  workingAt        String
+  experienceYears  Int?
+  industry         String?
+  linkedinProfile  String?
+  accountantEmail  String
+  addressId        Int?
+  addressLine1     String?
+  addressLine2     String?
+  city             String?
+  commune          String?
+  postalCode       String?
+  country          String?
+  latitude         Float?
+  longitude        Float?
+}
