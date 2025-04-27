@@ -7,13 +7,12 @@ import {
 } from './dto/update-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { AccountStatus } from '@prisma/client';
-import { Address } from '../auth/models/address.model';
 import { GraphQLError } from 'graphql';
 import { AuthService } from '../auth/auth.service';
 import { FileUpload } from 'graphql-upload';
 import { FileUploadService } from '../common/services/file-upload.service';
 import * as bcrypt from 'bcrypt';
-import { stat } from 'fs';
+import { AddressDto } from 'src/auth/dto/auth.dto';
 const saltOrRounds = 10;
 
 @Injectable()
@@ -126,7 +125,11 @@ export class UserService {
 
   async getAllUsers() {
     try {
-      return await this.prisma.user.findMany();
+      return await this.prisma.user.findMany({
+        include: {
+          address: true,
+        },
+      });
     } catch (error) {
       console.error('Error in getAllUsers:', error);
       throw new GraphQLError('Failed to fetch users', {
@@ -140,7 +143,13 @@ export class UserService {
 
   async getAllServiceProviders() {
     try {
-      return await this.prisma.serviceProviderUserDetails.findMany();
+      return await this.prisma.user.findMany({
+        where: { role: 'PROVIDER' },
+        include: {
+          address: true,
+          serviceProvider: true,
+        },
+      });
     } catch (error) {
       console.error('Error in getAllServiceProviders:', error);
       throw new GraphQLError('Failed to fetch service providers', {
@@ -154,7 +163,13 @@ export class UserService {
 
   async getAllProfessionals() {
     try {
-      return await this.prisma.professionalUserDetails.findMany();
+      return await this.prisma.user.findMany({
+        where: { role: 'PROFESSIONAL' },
+        include: {
+          address: true,
+          professional: true,
+        },
+      });
     } catch (error) {
       console.error('Error in getAllProfessionals:', error);
       throw new GraphQLError('Failed to fetch professionals', {
@@ -221,11 +236,26 @@ export class UserService {
   }
 
   //************************* FUNCTION FOR USER ***************************** */
-  async getUserInfo(userId: number) {
+  async getUserInfo(userId: number, role: any) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
+      let user;
+      if (role === 'PROFESSIONAL') {
+        user = await this.prisma.user.findUnique({
+          where: { id: userId, role: role },
+          include: {
+            address: true,
+            professional: true,
+          },
+        });
+      } else if (role === 'PROVIDER') {
+        user = await this.prisma.user.findUnique({
+          where: { id: userId, role: role },
+          include: {
+            address: true,
+            serviceProvider: true,
+          },
+        });
+      }
 
       if (!user) {
         throw new GraphQLError('User not found', {
@@ -371,7 +401,7 @@ export class UserService {
       });
     }
   }
-  async updateUserAddress(userId: number, addressData: Address) {
+  async updateUserAddress(userId: number, addressData: AddressDto) {
     try {
       // First get the user with their address
       const user = await this.prisma.user.findUnique({
@@ -391,16 +421,7 @@ export class UserService {
       // Update the existing address
       await this.prisma.address.update({
         where: { id: user.address.id },
-        data: {
-          addressLine1: addressData.addressLine1,
-          addressLine2: addressData.addressLine2,
-          city: addressData.city,
-          commune: addressData.commune,
-          postalCode: addressData.postalCode,
-          country: addressData.country,
-          latitude: addressData.latitude,
-          longitude: addressData.longitude,
-        },
+        data: addressData,
       });
 
       // Return updated user info

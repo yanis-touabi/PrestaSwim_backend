@@ -115,11 +115,90 @@ type BooleanResponse {
   expireToken: String
 }
 
+"""Service Provider User Details"""
+type ServiceProviderUserDetails {
+  userId: Float!
+  email: String!
+  firstName: String!
+  lastName: String!
+  avatar: String
+  isLoggedIn: Boolean!
+  login: Boolean!
+  birthDate: String
+  role: String!
+  gender: String
+  phoneNumber: String
+  accountStatus: String!
+  verificationCode: String
+  isVerified: Boolean!
+  createdAt: String!
+  updatedAt: String!
+  serviceProviderId: Float!
+  specialty: String
+  bio: String
+  hourlyRate: Float
+  notes: String
+  availability: Boolean!
+  addressId: Float
+  addressLine1: String
+  addressLine2: String
+  city: String
+  commune: String
+  postalCode: String
+  country: String
+  latitude: Float
+  longitude: Float
+}
+
+"""Professional User Details"""
+type ProfessionalUserDetails {
+  userId: Float!
+  email: String!
+  firstName: String!
+  lastName: String!
+  avatar: String
+  isLoggedIn: Boolean!
+  login: Boolean!
+  birthDate: String
+  role: String!
+  gender: String
+  phoneNumber: String
+  accountStatus: String!
+  verificationCode: String
+  isVerified: Boolean!
+  createdAt: String!
+  updatedAt: String!
+  professionalId: Float!
+  currentPosition: String!
+  contactEmail: String!
+  contactPhone: String!
+  workingAt: String!
+  experienceYears: Float
+  industry: String
+  linkedinProfile: String
+  accountantEmail: String!
+  addressId: Float
+  addressLine1: String
+  addressLine2: String
+  city: String
+  commune: String
+  postalCode: String
+  country: String
+  latitude: Float
+  longitude: Float
+}
+
 type Query {
   emptyQuery: String
-  getUser: User!
+  getMe: User!
   getUserById(userId: String!): User!
+  getServiceProviderUserDetailsById(userId: Int!): ServiceProviderUserDetails!
+  getProfessionalUserDetailsById(userId: Int!): ProfessionalUserDetails!
   getAllUser: [User!]!
+  getAllServiceProviders: [User!]!
+  getAllProfessionals: [User!]!
+  getMyProfessionalAccountDetails: [ProfessionalUserDetails!]
+  getMyServiceProviderAccountDetails: [ServiceProviderUserDetails!]
 }
 
 type Mutation {
@@ -132,10 +211,13 @@ type Mutation {
   verifyCode(verifyCodeInput: VerifyCodeDto!): BooleanResponse!
   changePassword(changePasswordInput: ChangePasswordDto!): BooleanResponse!
   updateUser(updateUserInput: UpdateUserDto!): User!
+  updateUserAddress(addressData: AddressDto!): User!
   deactivateAccount: BooleanResponse!
   updateAvatar(avatar: Upload): User!
   updatePassword(updatePasswordInput: UpdatePasswordDto!): BooleanResponse!
   banUser(userId: String!): BooleanResponse!
+  updateProfessionalInfo(updateUserInput: UpdateProfessionalDto!): Professional!
+  updateServiceProviderInfo(updateUserInput: UpdateServiceProviderDto!): ServiceProvider!
 }
 
 input SignUpDto {
@@ -225,4 +307,23 @@ input UpdateUserDto {
 input UpdatePasswordDto {
   currentPassword: String!
   newPassword: String!
+}
+
+input UpdateProfessionalDto {
+  currentPosition: String
+  contactEmail: String
+  contactPhone: String
+  workingAt: String
+  experienceYears: Float
+  industry: String
+  linkedinProfile: String
+  accountantEmail: String
+}
+
+input UpdateServiceProviderDto {
+  specialty: String
+  bio: String
+  hourlyRate: Float
+  notes: String
+  availability: Boolean
 }

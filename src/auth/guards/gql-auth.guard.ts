@@ -59,6 +59,8 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
       throw new ForbiddenException('Invalid token');
     }
 
+    console.log('User', payload);
+
     // get the user info from the database
     const user = await this.prisma.user.findUnique({
       where: {

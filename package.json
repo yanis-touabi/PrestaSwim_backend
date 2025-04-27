@@ -8,6 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "seed": "yarn prisma migrate reset && npx sleep-ms 3000 && npx ts-node prisma/seed.ts",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -21,6 +22,7 @@
   },
   "dependencies": {
     "@apollo/server": "4.12.0",
+    "@faker-js/faker": "^9.7.0",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/apollo": "^13.0.4",
     "@nestjs/common": "^11.0.1",
@@ -49,6 +51,7 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sleep-ms": "^2.0.1",
     "tslib": "^2.8.1"
   },
   "devDependencies": {

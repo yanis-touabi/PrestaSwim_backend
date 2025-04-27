@@ -25,6 +25,7 @@ import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { Address } from '../auth/models/address.model';
 import { Professional } from './models/professional.model';
 import { ServiceProvider } from './models/service-provider.model';
+import { AddressDto } from 'src/auth/dto/auth.dto';
 
 @Resolver()
 @UseGuards(GqlAuthGuard)
@@ -79,36 +80,15 @@ export class UserAdminResolver {
 }
 
 @Resolver()
+@UseGuards(GqlAuthGuard)
 export class UserResolver {
   constructor(private readonly userService: UserService) {}
-
-  @Mutation(() => User)
-  async updateUserAddress(
-    @Context() context,
-    @Args('addressData') addressData: Address,
-  ) {
-    const userId = context.req.user.sub;
-    return this.userService.updateUserAddress(userId, addressData);
-  }
-
-  @Query(() => [ServiceProviderUserDetails], { nullable: true })
-  async getMyServiceProviderAccountDetails(@Context() context) {
-    const userId = context.req.user.sub;
-    return this.userService.getMyServiceProviderAccountDetails(
-      userId,
-    );
-  }
-
-  @Query(() => [ProfessionalUserDetails], { nullable: true })
-  async getMyProfessionalAccountDetails(@Context() context) {
-    const userId = context.req.user.sub;
-    return this.userService.getMyProfessionalAccountDetails(userId);
-  }
 
   @Query(() => User)
   async getMe(@Context() context) {
     const userId = context.req.user.sub;
-    return this.userService.getUserInfo(userId);
+    const role = context.req.user.role;
+    return this.userService.getUserInfo(userId, role);
   }
 
   @Mutation(() => User)
@@ -120,30 +100,13 @@ export class UserResolver {
     return this.userService.updateUser(userId, updateUserDto);
   }
 
-  @Mutation(() => Professional)
-  async updateProfessionalInfo(
-    @Args('updateUserInput')
-    updateProfessionalDto: UpdateProfessionalDto,
+  @Mutation(() => User)
+  async updateUserAddress(
     @Context() context,
+    @Args('addressData') addressData: AddressDto,
   ) {
     const userId = context.req.user.sub;
-    return this.userService.updateProfessionalInfo(
-      userId,
-      updateProfessionalDto,
-    );
-  }
-
-  @Mutation(() => ServiceProvider)
-  async updateServiceProviderInfo(
-    @Args('updateUserInput')
-    updateServiceProviderDto: UpdateServiceProviderDto,
-    @Context() context,
-  ) {
-    const userId = context.req.user.sub;
-    return this.userService.updateServiceProviderInfo(
-      userId,
-      updateServiceProviderDto,
-    );
+    return this.userService.updateUserAddress(userId, addressData);
   }
 
   @Mutation(() => BooleanResponse)
@@ -170,5 +133,61 @@ export class UserResolver {
   ) {
     const userId = context.req.user.sub;
     return this.userService.updatePassword(userId, updatePasswordDto);
+  }
+}
+
+@Resolver()
+@UseGuards(GqlAuthGuard)
+export class ProfessionalResolver {
+  constructor(private readonly userService: UserService) {}
+
+  @Query(() => [ProfessionalUserDetails], { nullable: true })
+  @Roles(Role.PROFESSIONAL)
+  async getMyProfessionalAccountDetails(@Context() context) {
+    const userId = context.req.user.sub;
+    return this.userService.getMyProfessionalAccountDetails(userId);
+  }
+
+  @Mutation(() => Professional)
+  @Roles(Role.PROFESSIONAL)
+  async updateProfessionalInfo(
+    @Args('updateUserInput')
+    updateProfessionalDto: UpdateProfessionalDto,
+    @Context() context,
+  ) {
+    const userId = context.req.user.sub;
+    return this.userService.updateProfessionalInfo(
+      userId,
+      updateProfessionalDto,
+    );
+  }
+}
+
+@Resolver()
+@UseGuards(GqlAuthGuard)
+export class ServiceProviderResolver {
+  constructor(private readonly userService: UserService) {}
+
+  @Query(() => [ServiceProviderUserDetails], { nullable: true })
+  @Roles(Role.PROVIDER)
+  async getMyServiceProviderAccountDetails(@Context() context) {
+    const userId = context.req.user.sub;
+    return this.userService.getMyServiceProviderAccountDetails(
+      userId,
+    );
+  }
+
+  @Mutation(() => ServiceProvider)
+  @Roles(Role.PROVIDER)
+  async updateServiceProviderInfo(
+    @Args('updateUserInput')
+    updateServiceProviderDto: UpdateServiceProviderDto,
+    @Context() context,
+  ) {
+    const userId = context.req.user.sub;
+    return this.userService.updateServiceProviderInfo(
+      userId,
+      updateServiceProviderDto,
+    );
   }
 }
