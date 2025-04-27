@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  UpdateProfessionalDto,
+  UpdateServiceProviderDto,
+  UpdateUserDto,
+} from './dto/update-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { AccountStatus } from '@prisma/client';
+import { Address } from '../auth/models/address.model';
 import { GraphQLError } from 'graphql';
 import { AuthService } from '../auth/auth.service';
 import { FileUpload } from 'graphql-upload';
@@ -19,35 +24,7 @@ export class UserService {
     private fileUploadService: FileUploadService,
   ) {}
 
-  async getUserInfo(userId: number) {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        throw new GraphQLError('User not found', {
-          extensions: {
-            code: 'NOT_FOUND',
-            http: { status: 404 },
-          },
-        });
-      }
-
-      return user;
-    } catch (error) {
-      console.error('Error in getUserInfo:', error);
-      if (error instanceof GraphQLError) {
-        throw error;
-      }
-      throw new GraphQLError('Failed to fetch user info', {
-        extensions: {
-          code: 'INTERNAL_SERVER_ERROR',
-          http: { status: 500 },
-        },
-      });
-    }
-  }
+  //************************* FUNCTION FOR ADMIN **************************** */
   async getUserById(userId: number) {
     try {
       const user = await this.prisma.user.findUnique({
@@ -78,12 +55,109 @@ export class UserService {
     }
   }
 
+  async getServiceProviderUserDetailsById(userId: number) {
+    try {
+      const user =
+        await this.prisma.serviceProviderUserDetails.findUnique({
+          where: { userId },
+        });
+
+      if (!user) {
+        throw new GraphQLError('Service provider user not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: { status: 404 },
+          },
+        });
+      }
+      return user;
+    } catch (error) {
+      console.error(
+        'Error in getServiceProviderUserDetailsById:',
+        error,
+      );
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      throw new GraphQLError(
+        'Failed to fetch service provider user',
+        {
+          extensions: {
+            code: 'INTERNAL_SERVER_ERROR',
+            http: { status: 500 },
+          },
+        },
+      );
+    }
+  }
+
+  async getProfessionalUserDetailsById(userId: number) {
+    try {
+      const user =
+        await this.prisma.professionalUserDetails.findUnique({
+          where: { userId },
+        });
+
+      if (!user) {
+        throw new GraphQLError('Professional user not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: { status: 404 },
+          },
+        });
+      }
+      return user;
+    } catch (error) {
+      console.error(
+        'Error in getProfessionalUserDetailsById:',
+        error,
+      );
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      throw new GraphQLError('Failed to fetch professional user', {
+        extensions: {
+          code: 'INTERNAL_SERVER_ERROR',
+          http: { status: 500 },
+        },
+      });
+    }
+  }
+
   async getAllUsers() {
     try {
       return await this.prisma.user.findMany();
     } catch (error) {
       console.error('Error in getAllUsers:', error);
       throw new GraphQLError('Failed to fetch users', {
+        extensions: {
+          code: 'INTERNAL_SERVER_ERROR',
+          http: { status: 500 },
+        },
+      });
+    }
+  }
+
+  async getAllServiceProviders() {
+    try {
+      return await this.prisma.serviceProviderUserDetails.findMany();
+    } catch (error) {
+      console.error('Error in getAllServiceProviders:', error);
+      throw new GraphQLError('Failed to fetch service providers', {
+        extensions: {
+          code: 'INTERNAL_SERVER_ERROR',
+          http: { status: 500 },
+        },
+      });
+    }
+  }
+
+  async getAllProfessionals() {
+    try {
+      return await this.prisma.professionalUserDetails.findMany();
+    } catch (error) {
+      console.error('Error in getAllProfessionals:', error);
+      throw new GraphQLError('Failed to fetch professionals', {
         extensions: {
           code: 'INTERNAL_SERVER_ERROR',
           http: { status: 500 },
@@ -138,6 +212,37 @@ export class UserService {
         });
       }
       throw new GraphQLError('Failed to ban user', {
+        extensions: {
+          code: 'INTERNAL_SERVER_ERROR',
+          http: { status: 500 },
+        },
+      });
+    }
+  }
+
+  //************************* FUNCTION FOR USER ***************************** */
+  async getUserInfo(userId: number) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new GraphQLError('User not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: { status: 404 },
+          },
+        });
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error in getUserInfo:', error);
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      throw new GraphQLError('Failed to fetch user info', {
         extensions: {
           code: 'INTERNAL_SERVER_ERROR',
           http: { status: 500 },
@@ -266,6 +371,62 @@ export class UserService {
       });
     }
   }
+  async updateUserAddress(userId: number, addressData: Address) {
+    try {
+      // First get the user with their address
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { address: true },
+      });
+
+      if (!user || !user.address) {
+        throw new GraphQLError('User or address not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: { status: 404 },
+          },
+        });
+      }
+
+      // Update the existing address
+      await this.prisma.address.update({
+        where: { id: user.address.id },
+        data: {
+          addressLine1: addressData.addressLine1,
+          addressLine2: addressData.addressLine2,
+          city: addressData.city,
+          commune: addressData.commune,
+          postalCode: addressData.postalCode,
+          country: addressData.country,
+          latitude: addressData.latitude,
+          longitude: addressData.longitude,
+        },
+      });
+
+      // Return updated user info
+      return this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { address: true },
+      });
+    } catch (error) {
+      console.error('Error in updateUserAddress:', error);
+      if (error.code === 'P2025') {
+        throw new GraphQLError('User or address not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: { status: 404 },
+          },
+        });
+      }
+      throw new GraphQLError('Failed to update address', {
+        extensions: {
+          code: 'INTERNAL_SERVER_ERROR',
+          http: { status: 500 },
+        },
+      });
+    }
+  }
+
   async updateUser(userId: number, updateUserDto: UpdateUserDto) {
     try {
       // Check if email is being updated and if it already exists
@@ -345,6 +506,172 @@ export class UserService {
           http: { status: 500 },
         },
       });
+    }
+  }
+
+  //************************* FUNCTION FOR PROFESSIONAL ********************************* */
+
+  async getMyProfessionalAccountDetails(userId?: number) {
+    try {
+      if (userId) {
+        const user =
+          await this.prisma.professionalUserDetails.findUnique({
+            where: { userId },
+          });
+
+        if (!user) {
+          throw new GraphQLError('Professional user not found', {
+            extensions: {
+              code: 'NOT_FOUND',
+              http: { status: 404 },
+            },
+          });
+        }
+        return user;
+      }
+      return await this.prisma.professionalUserDetails.findMany();
+    } catch (error) {
+      console.error('Error in getProfessionalUserDetails:', error);
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      throw new GraphQLError('Failed to fetch professional users', {
+        extensions: {
+          code: 'INTERNAL_SERVER_ERROR',
+          http: { status: 500 },
+        },
+      });
+    }
+  }
+
+  async updateProfessionalInfo(
+    userId: number,
+    professionalData: UpdateProfessionalDto,
+  ) {
+    try {
+      const professional = await this.prisma.professional.findUnique({
+        where: { userId: userId },
+      });
+
+      if (!professional) {
+        return new GraphQLError(
+          'Your professional account not found',
+          {
+            extensions: {
+              code: 'NOT_FOUND',
+              http: { status: 404 },
+            },
+          },
+        );
+      }
+
+      // Update the existing professional
+      return await this.prisma.professional.update({
+        where: { id: professional.id },
+        data: professionalData,
+      });
+    } catch (error) {
+      console.error('Error in updateProfessionalInfo:', error);
+      if (error.code === 'P2025') {
+        throw new GraphQLError('User not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: { status: 404 },
+          },
+        });
+      }
+      throw new GraphQLError(
+        'Failed to update updateProfessionalInfo',
+        {
+          extensions: {
+            code: 'INTERNAL_SERVER_ERROR',
+            http: { status: 500 },
+          },
+        },
+      );
+    }
+  }
+
+  //************************* FUNCTION FOR SERVICE PROVIDER ***************************** */
+  async getMyServiceProviderAccountDetails(userId?: number) {
+    try {
+      const user =
+        await this.prisma.serviceProviderUserDetails.findUnique({
+          where: { userId },
+        });
+
+      if (!user) {
+        throw new GraphQLError('Service provider user not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: { status: 404 },
+          },
+        });
+      }
+      return user;
+    } catch (error) {
+      console.error('Error in getServiceProviderUserDetails:', error);
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+      throw new GraphQLError(
+        'Failed to fetch service provider users',
+        {
+          extensions: {
+            code: 'INTERNAL_SERVER_ERROR',
+            http: { status: 500 },
+          },
+        },
+      );
+    }
+  }
+
+  async updateServiceProviderInfo(
+    userId: number,
+    serviceProviderData: UpdateServiceProviderDto,
+  ) {
+    try {
+      const serviceProvider =
+        await this.prisma.serviceProvider.findUnique({
+          where: { userId: userId },
+        });
+
+      if (!serviceProvider) {
+        return new GraphQLError(
+          'Your serviceProvider account is not found',
+          {
+            extensions: {
+              code: 'NOT_FOUND',
+              http: { status: 404 },
+            },
+          },
+        );
+      }
+
+      // Update the existing serviceProvider
+      return await this.prisma.serviceProvider.update({
+        where: { id: serviceProvider.id },
+        data: serviceProviderData,
+      });
+    } catch (error) {
+      console.error('Error in updateServiceProviderInfo:', error);
+      if (error.code === 'P2025') {
+        throw new GraphQLError('User not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: { status: 404 },
+          },
+        });
+      }
+      throw new GraphQLError(
+        'Failed to update updateServiceProviderInfo',
+        {
+          extensions: {
+            code: 'INTERNAL_SERVER_ERROR',
+            http: { status: 500 },
+          },
+        },
+      );
     }
   }
 }

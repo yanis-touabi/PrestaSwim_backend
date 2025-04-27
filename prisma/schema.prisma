@@ -34,21 +34,21 @@ model User {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  ServiceProvider ServiceProvider?
-  Professional    Professional?
-  Admin           Admin?
+  serviceProvider ServiceProvider?
+  professional    Professional?
+  admin           Admin?
 
   address                Address?                @relation(fields: [addressId], references: [id])
   sentMessage            Message[]               @relation("SentMessages")
   recievedMessage        Message[]               @relation("ReceivedMessages")
-  Notification           Notification[]
-  BannedWord             BannedWord[]
-  LoginAttempt           LoginAttempt[]
-  Token                  Token[]
-  NotificationPreference NotificationPreference?
-  InvoiceAudit           InvoiceAudit[]
-  ContractMissionAudit   ContractMissionAudit[]
-  VacationMissionAudit   VacationMissionAudit[]
+  notification           Notification[]
+  bannedWord             BannedWord[]
+  loginAttempt           LoginAttempt[]
+  token                  Token[]
+  notificationPreference NotificationPreference?
+  invoiceAudit           InvoiceAudit[]
+  contractMissionAudit   ContractMissionAudit[]
+  vacationMissionAudit   VacationMissionAudit[]
 }
 
 model Admin {
@@ -91,7 +91,7 @@ model Address {
   longitude    Float?
 
   user User[]
-  Pool Pool[]
+  pool Pool[]
 }
 
 model ServiceProvider {
@@ -104,12 +104,12 @@ model ServiceProvider {
   availability Boolean
 
   user            User              @relation(fields: [userId], references: [id])
-  Document        Document[]
-  Application     Application[]
-  VacationMission VacationMission[]
-  ContractMission ContractMission[]
-  FavoritePool    FavoritePool[]
-  FavoriteOffer   FavoriteOffer[]
+  document        Document[]
+  application     Application[]
+  vacationMission VacationMission[]
+  contractMission ContractMission[]
+  favoritePool    FavoritePool[]
+  favoriteOffer   FavoriteOffer[]
 }
 
 model Professional {
@@ -125,10 +125,10 @@ model Professional {
   accountantEmail String // email du comptable
 
   user            User              @relation(fields: [userId], references: [id])
-  Pool            Pool[]
+  pool            Pool[]
   jobOffer        JobOffer[]
-  VacationMission VacationMission[]
-  ContractMission ContractMission[]
+  vacationMission VacationMission[]
+  contractMission ContractMission[]
 }
 
 model Pool {
@@ -144,8 +144,8 @@ model Pool {
   poolAddress  Address      @relation(fields: [poolAddressId], references: [id])
 
   jobOffer     JobOffer[]
-  FavoritePool FavoritePool[]
-  Commission   Commission[]
+  favoritePool FavoritePool[]
+  commission   Commission[]
 }
 
 model Document {
@@ -165,7 +165,7 @@ model Job {
   id    Int    @id @default(autoincrement())
   title String @unique
 
-  JobOffer JobOffer[]
+  jobOffer JobOffer[]
 }
 
 model JobOffer {
@@ -186,10 +186,10 @@ model JobOffer {
   pool         Pool         @relation(fields: [poolId], references: [id])
   Job          Job          @relation(fields: [jobId], references: [id])
 
-  Vacation      Vacation[]
-  Contract      Contract[]
-  Application   Application[]
-  FavoriteOffer FavoriteOffer[]
+  vacation      Vacation[]
+  contract      Contract[]
+  application   Application[]
+  favoriteOffer FavoriteOffer[]
 }
 
 model Vacation {
@@ -254,9 +254,9 @@ model VacationMission {
   vacation     Vacation        @relation(fields: [vacationId], references: [id])
   professional Professional    @relation(fields: [professionalId], references: [id])
 
-  Evaluation           Evaluation[]
-  Invoice              Invoice[]
-  VacationMissionAudit VacationMissionAudit[]
+  evaluation           Evaluation[]
+  invoice              Invoice[]
+  vacationMissionAudit VacationMissionAudit[]
 }
 
 model VacationMissionAudit {
@@ -267,7 +267,7 @@ model VacationMissionAudit {
   userId            Int? // ID of the user who made the change
   timestamp         DateTime @default(now()) // Time of the change
 
-  VacationMission VacationMission @relation(fields: [vacationMissionId], references: [id])
+  vacationMission VacationMission @relation(fields: [vacationMissionId], references: [id])
   user            User?           @relation(fields: [userId], references: [id])
 }
 
@@ -293,9 +293,9 @@ model ContractMission {
   provider             ServiceProvider        @relation(fields: [providerId], references: [id])
   contract             Contract               @relation(fields: [contractId], references: [id])
   professional         Professional           @relation(fields: [professionalId], references: [id])
-  Evaluation           Evaluation[]
-  Invoice              Invoice[]
-  ContractMissionAudit ContractMissionAudit[]
+  evaluation           Evaluation[]
+  invoice              Invoice[]
+  contractMissionAudit ContractMissionAudit[]
 }
 
 model ContractMissionAudit {
@@ -321,7 +321,7 @@ model Invoice {
 
   contractMission ContractMission? @relation(fields: [contractMissionId], references: [id])
   vacationMission VacationMission? @relation(fields: [vacationMissionId], references: [id])
-  InvoiceAudit    InvoiceAudit[]
+  invoiceAudit    InvoiceAudit[]
 }
 
 model InvoiceAudit {
