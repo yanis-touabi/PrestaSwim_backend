@@ -188,6 +188,17 @@ type ProfessionalUserDetails {
   longitude: Float
 }
 
+type Pool {
+  id: Int!
+  professionalId: Int!
+  companyName: String
+  poolName: String!
+  poolDescription: String
+  poolAddressId: Int!
+  professional: Professional!
+  poolAddress: Address!
+}
+
 type Query {
   emptyQuery: String
   getMe: User!
@@ -199,6 +210,9 @@ type Query {
   getAllProfessionals: [User!]!
   getMyProfessionalAccountDetails: [ProfessionalUserDetails!]
   getMyServiceProviderAccountDetails: [ServiceProviderUserDetails!]
+  getAllPools: [Pool!]!
+  getPoolById(id: Float!): Pool
+  getProfessionalPools: [Pool!]!
 }
 
 type Mutation {
@@ -218,6 +232,9 @@ type Mutation {
   banUser(userId: String!): BooleanResponse!
   updateProfessionalInfo(updateUserInput: UpdateProfessionalDto!): Professional!
   updateServiceProviderInfo(updateUserInput: UpdateServiceProviderDto!): ServiceProvider!
+  createPool(input: CreatePoolDto!): Pool!
+  updatePool(id: Float!, input: UpdatePoolDto!): Pool!
+  deletePool(id: Float!): Pool!
 }
 
 input SignUpDto {
@@ -326,4 +343,18 @@ input UpdateServiceProviderDto {
   hourlyRate: Float
   notes: String
   availability: Boolean
+}
+
+input CreatePoolDto {
+  poolName: String!
+  companyName: String
+  poolDescription: String
+  poolAddressId: Float!
+}
+
+input UpdatePoolDto {
+  poolName: String
+  companyName: String
+  poolDescription: String
+  poolAddressId: Float
 }

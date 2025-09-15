@@ -5,6 +5,7 @@ import { upperDirectiveTransformer } from './common/directives/upper-case.direct
 // import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { PoolModule } from './pool/pool.module';
 import { DirectiveLocation, GraphQLDirective } from 'graphql';
 import { PrismaModule } from './prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
@@ -54,6 +55,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     PrismaModule,
     AuthModule,
     UserModule,
+    PoolModule,
     MailModule,
   ],
   providers: [],

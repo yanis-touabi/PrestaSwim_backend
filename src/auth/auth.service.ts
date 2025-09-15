@@ -193,6 +193,11 @@ export class AuthService {
         where: {
           email: signInDto.email,
         },
+        include: {
+          address: true,
+          serviceProvider: true,
+          professional: true,
+        },
       });
 
       if (!user) {
